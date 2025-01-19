@@ -15,6 +15,19 @@
       font-size: 16px;
       color: green;
     }
+    #scanButton {
+      margin-top: 10px;
+      padding: 10px 20px;
+      background-color: #4CAF50;
+      color: white;
+      font-size: 16px;
+      border: none;
+      cursor: pointer;
+    }
+    #scanButton:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
   </style>
 </head>
 <body>
@@ -22,6 +35,7 @@
   <h1>Escanear Código QR</h1>
   <video id="video" autoplay></video>
   <div id="output">Esperando QR...</div>
+  <button id="scanButton">Escanear QR</button>
 
   <!-- Cargar la librería jsQR desde un CDN -->
   <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
@@ -29,6 +43,9 @@
   <script>
     const videoElement = document.getElementById('video');
     const outputElement = document.getElementById('output');
+    const scanButton = document.getElementById('scanButton');
+
+    let isScanning = false; // Para controlar si estamos escaneando
 
     // Función para acceder a la cámara
     function startCamera() {
@@ -46,7 +63,7 @@
           })
           .then((stream) => {
             videoElement.srcObject = stream;
-            startScanning();
+            outputElement.textContent = 'Esperando QR...';
           })
           .catch((error) => {
             console.error('Error al acceder a la cámara:', error);
@@ -58,7 +75,7 @@
           navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
             .then((stream) => {
               videoElement.srcObject = stream;
-              startScanning();
+              outputElement.textContent = 'Esperando QR...';
             })
             .catch((error) => {
               console.error('Error al acceder a la cámara frontal:', error);
@@ -68,12 +85,17 @@
       });
     }
 
-    // Función para escanear el QR
+    // Función para escanear el QR (solo cuando el usuario lo decida)
     function startScanning() {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
 
       function scan() {
+        // Si no estamos escaneando, detenemos el bucle
+        if (!isScanning) {
+          return;
+        }
+
         // Asegurarse de que el video esté cargado
         if (videoElement.videoWidth === 0 || videoElement.videoHeight === 0) {
           requestAnimationFrame(scan);
@@ -95,11 +117,12 @@
 
         if (qrCode) {
           outputElement.textContent = `Código QR Detectado: ${qrCode.data}`;
+          isScanning = false;  // Detener el escaneo después de encontrar el QR
         } else {
           outputElement.textContent = 'Escaneando...';
         }
 
-        // Continuar escaneando
+        // Continuar escaneando mientras estemos en el modo de escaneo
         requestAnimationFrame(scan);
       }
 
@@ -107,10 +130,30 @@
       scan();
     }
 
+    // Función para activar el escaneo al presionar el botón
+    function toggleScan() {
+      if (isScanning) {
+        // Detener el escaneo
+        isScanning = false;
+        outputElement.textContent = 'Escaneo detenido. Presiona "Escanear QR" para empezar de nuevo.';
+        scanButton.textContent = 'Escanear QR';
+      } else {
+        // Iniciar el escaneo
+        isScanning = true;
+        outputElement.textContent = 'Escaneando...';
+        scanButton.textContent = 'Detener Escaneo';
+        startScanning();
+      }
+    }
+
     // Iniciar la cámara cuando se cargue la página
     window.onload = () => {
       startCamera();
     };
+
+    // Asociar la función al botón de escanear
+    scanButton.addEventListener('click', toggleScan);
+
   </script>
 
 </body>
