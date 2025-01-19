@@ -52,6 +52,11 @@
 
     // Función para iniciar el escáner
     function startScanner() {
+      if (scanner) {
+        console.log("El escáner ya está en uso.");
+        return;
+      }
+
       scanner = new QrScanner(videoElement, result => {
         qrResultElement.textContent = result.data; // Muestra el resultado del QR
         localStorage.setItem('qrResult', result.data); // Guarda el resultado en memoria (localStorage)
@@ -62,7 +67,10 @@
       QrScanner.hasCamera().then(hasCamera => {
         if (hasCamera) {
           console.log("Cámara encontrada. Iniciando escaneo...");
-          scanner.start();
+          scanner.start().catch(error => {
+            console.error("Error al iniciar la cámara: ", error);
+            qrResultElement.textContent = "No se pudo acceder a la cámara";
+          });
         } else {
           console.error("No se encuentra una cámara en este dispositivo");
           qrResultElement.textContent = "No se encuentra una cámara en este dispositivo";
