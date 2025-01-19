@@ -23,23 +23,50 @@
   <video id="video" autoplay></video>
   <div id="output">Esperando QR...</div>
 
+  <!-- Cargar la librería jsQR desde un CDN -->
   <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
 
   <script>
-    // Acceder a la cámara
     const videoElement = document.getElementById('video');
     const outputElement = document.getElementById('output');
 
-    // Usamos getUserMedia para acceder a la cámara
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-      .then((stream) => {
-        videoElement.srcObject = stream;
-        startScanning();
-      })
-      .catch((error) => {
-        console.error('Error al acceder a la cámara:', error);
-        outputElement.textContent = 'No se pudo acceder a la cámara.';
+    // Función para acceder a la cámara
+    function startCamera() {
+      // Primero enumeramos los dispositivos disponibles
+      navigator.mediaDevices.enumerateDevices().then(devices => {
+        const videoDevices = devices.filter(device => device.kind === 'videoinput');
+        
+        // Intentamos encontrar la cámara trasera
+        const backCamera = videoDevices.find(device => device.label.toLowerCase().includes('back') || device.deviceId);
+
+        // Si encontramos la cámara trasera, la usamos
+        if (backCamera) {
+          navigator.mediaDevices.getUserMedia({
+            video: { deviceId: backCamera.deviceId }
+          })
+          .then((stream) => {
+            videoElement.srcObject = stream;
+            startScanning();
+          })
+          .catch((error) => {
+            console.error('Error al acceder a la cámara:', error);
+            outputElement.textContent = 'No se pudo acceder a la cámara.';
+          });
+        } else {
+          // Si no encontramos la cámara trasera, intentamos usar la cámara frontal
+          console.log('Cámara trasera no encontrada, usando cámara frontal');
+          navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+            .then((stream) => {
+              videoElement.srcObject = stream;
+              startScanning();
+            })
+            .catch((error) => {
+              console.error('Error al acceder a la cámara frontal:', error);
+              outputElement.textContent = 'No se pudo acceder a la cámara.';
+            });
+        }
       });
+    }
 
     // Función para escanear el QR
     function startScanning() {
@@ -79,6 +106,11 @@
       // Iniciar el escaneo
       scan();
     }
+
+    // Iniciar la cámara cuando se cargue la página
+    window.onload = () => {
+      startCamera();
+    };
   </script>
 
 </body>
