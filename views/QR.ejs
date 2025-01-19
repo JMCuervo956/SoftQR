@@ -5,160 +5,52 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Escanear Código QR</title>
   <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      flex-direction: column;
+      text-align: center;
+    }
     video {
-      width: 100%;
-      height: auto;
-      border: 1px solid black;
+      border: 2px solid #000;
+      margin-bottom: 20px;
     }
-    #output {
-      margin-top: 10px;
-      font-size: 16px;
-      color: green;
-    }
-    #scanButton {
-      margin-top: 10px;
-      padding: 10px 20px;
-      background-color: #4CAF50;
-      color: white;
-      font-size: 16px;
-      border: none;
-      cursor: pointer;
-    }
-    #scanButton:disabled {
-      background-color: #ccc;
-      cursor: not-allowed;
+    #qr-result {
+      font-size: 18px;
     }
   </style>
 </head>
 <body>
-
   <h1>Escanear Código QR</h1>
-  <video id="video" autoplay></video>
-  <div id="output">Esperando QR...</div>
-  <button id="scanButton">Escanear QR</button>
+  <video id="video" width="100%" height="auto" style="border: 1px solid #000;"></video>
+  <div id="qr-result">Resultado del QR: <span id="qr-text">No escaneado</span></div>
+  <script type="module">
+    import QrScanner from 'https://unpkg.com/qr-scanner@1.3.0/qr-scanner.min.js';
 
-  <!-- Cargar la librería jsQR desde un CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
-
-  <script>
+    // Inicializa el escáner
     const videoElement = document.getElementById('video');
-    const outputElement = document.getElementById('output');
-    const scanButton = document.getElementById('scanButton');
+    const qrResultElement = document.getElementById('qr-text');
 
-    let isScanning = false; // Para controlar si estamos escaneando
-    let stream = null; // Almacenar el flujo de la cámara
+    // Crea una instancia del escáner QR y pasa el video
+    const scanner = new QrScanner(videoElement, result => {
+      qrResultElement.textContent = result.data; // Muestra el resultado del QR
+      localStorage.setItem('qrResult', result.data); // Guarda el resultado en memoria (localStorage)
+      console.log(result.data); // Muestra el resultado en consola
+    });
 
-    // Función para acceder a la cámara
-    function startCamera() {
-      // Primero enumeramos los dispositivos disponibles
-      navigator.mediaDevices.enumerateDevices().then(devices => {
-        const videoDevices = devices.filter(device => device.kind === 'videoinput');
-        
-        // Intentamos encontrar la cámara trasera
-        const backCamera = videoDevices.find(device => device.label.toLowerCase().includes('back') || device.deviceId);
-
-        // Si encontramos la cámara trasera, la usamos
-        if (backCamera) {
-          navigator.mediaDevices.getUserMedia({
-            video: { deviceId: backCamera.deviceId }
-          })
-          .then((cameraStream) => {
-            stream = cameraStream;
-            videoElement.srcObject = stream;
-            outputElement.textContent = 'Esperando QR...';
-          })
-          .catch((error) => {
-            console.error('Error al acceder a la cámara:', error);
-            outputElement.textContent = 'No se pudo acceder a la cámara.';
-          });
-        } else {
-          // Si no encontramos la cámara trasera, intentamos usar la cámara frontal
-          console.log('Cámara trasera no encontrada, usando cámara frontal');
-          navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-            .then((cameraStream) => {
-              stream = cameraStream;
-              videoElement.srcObject = stream;
-              outputElement.textContent = 'Esperando QR...';
-            })
-            .catch((error) => {
-              console.error('Error al acceder a la cámara frontal:', error);
-              outputElement.textContent = 'No se pudo acceder a la cámara.';
-            });
-        }
-      });
-    }
-
-    // Función para escanear el QR (solo cuando el usuario lo decida)
-    function startScanning() {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-
-      function scan() {
-        // Si no estamos escaneando, detenemos el bucle
-        if (!isScanning) {
-          return;
-        }
-
-        // Asegurarse de que el video esté cargado
-        if (videoElement.videoWidth === 0 || videoElement.videoHeight === 0) {
-          requestAnimationFrame(scan);
-          return;
-        }
-
-        // Establecer el tamaño del canvas igual al del video
-        canvas.width = videoElement.videoWidth;
-        canvas.height = videoElement.videoHeight;
-
-        // Dibujar el video en el canvas
-        ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-
-        // Obtener los datos de la imagen del canvas
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-
-        // Escanear el código QR usando jsQR
-        const qrCode = jsQR(imageData.data, canvas.width, canvas.height);
-
-        if (qrCode) {
-          outputElement.textContent = `Código QR Detectado: ${qrCode.data}`;
-          isScanning = false;  // Detener el escaneo después de encontrar el QR
-          scanButton.textContent = 'Escanear QR';
-        } else {
-          outputElement.textContent = 'Escaneando...';
-        }
-
-        // Continuar escaneando mientras estemos en el modo de escaneo
-        requestAnimationFrame(scan);
-      }
-
-      // Iniciar el escaneo
-      scan();
-    }
-
-    // Función para activar el escaneo al presionar el botón
-    function toggleScan() {
-      if (isScanning) {
-        // Detener el escaneo
-        isScanning = false;
-        outputElement.textContent = 'Escaneo detenido. Presiona "Escanear QR" para empezar de nuevo.';
-        scanButton.textContent = 'Escanear QR';
+    // Inicia el escaneo
+    QrScanner.hasCamera().then(hasCamera => {
+      if (hasCamera) {
+        scanner.start();
       } else {
-        // Iniciar el escaneo
-        isScanning = true;
-        outputElement.textContent = 'Escaneando...';
-        scanButton.textContent = 'Detener Escaneo';
-        startScanning();
+        console.error('No se encuentra una cámara en este dispositivo');
+        qrResultElement.textContent = 'No se encuentra una cámara en este dispositivo';
       }
-    }
-
-    // Iniciar la cámara cuando se cargue la página
-    window.onload = () => {
-      startCamera();
-    };
-
-    // Asociar la función al botón de escanear
-    scanButton.addEventListener('click', toggleScan);
-
+    });
   </script>
-
 </body>
 </html>
