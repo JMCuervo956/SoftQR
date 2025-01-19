@@ -46,6 +46,7 @@
     const scanButton = document.getElementById('scanButton');
 
     let isScanning = false; // Para controlar si estamos escaneando
+    let stream = null; // Almacenar el flujo de la cámara
 
     // Función para acceder a la cámara
     function startCamera() {
@@ -61,7 +62,8 @@
           navigator.mediaDevices.getUserMedia({
             video: { deviceId: backCamera.deviceId }
           })
-          .then((stream) => {
+          .then((cameraStream) => {
+            stream = cameraStream;
             videoElement.srcObject = stream;
             outputElement.textContent = 'Esperando QR...';
           })
@@ -73,7 +75,8 @@
           // Si no encontramos la cámara trasera, intentamos usar la cámara frontal
           console.log('Cámara trasera no encontrada, usando cámara frontal');
           navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-            .then((stream) => {
+            .then((cameraStream) => {
+              stream = cameraStream;
               videoElement.srcObject = stream;
               outputElement.textContent = 'Esperando QR...';
             })
@@ -118,6 +121,7 @@
         if (qrCode) {
           outputElement.textContent = `Código QR Detectado: ${qrCode.data}`;
           isScanning = false;  // Detener el escaneo después de encontrar el QR
+          scanButton.textContent = 'Escanear QR';
         } else {
           outputElement.textContent = 'Escaneando...';
         }
