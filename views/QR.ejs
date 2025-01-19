@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Escanear Código QR</title>
+  <style>
+    video {
+      width: 100%;
+      height: auto;
+      border: 1px solid black;
+    }
+    #output {
+      margin-top: 10px;
+      font-size: 16px;
+      color: green;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Escanear Código QR</h1>
+  <video id="video" autoplay></video>
+  <div id="output">Esperando QR...</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
+
+  <script>
+    // Acceder a la cámara
+    const videoElement = document.getElementById('video');
+    const outputElement = document.getElementById('output');
+
+    // Usamos getUserMedia para acceder a la cámara
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+      .then((stream) => {
+        videoElement.srcObject = stream;
+        startScanning();
+      })
+      .catch((error) => {
+        console.error('Error al acceder a la cámara:', error);
+        outputElement.textContent = 'No se pudo acceder a la cámara.';
+      });
+
+    // Función para escanear el QR
+    function startScanning() {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      function scan() {
+        // Asegurarse de que el video esté cargado
+        if (videoElement.videoWidth === 0 || videoElement.videoHeight === 0) {
+          requestAnimationFrame(scan);
+          return;
+        }
+
+        // Establecer el tamaño del canvas igual al del video
+        canvas.width = videoElement.videoWidth;
+        canvas.height = videoElement.videoHeight;
+
+        // Dibujar el video en el canvas
+        ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+
+        // Obtener los datos de la imagen del canvas
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+        // Escanear el código QR usando jsQR
+        const qrCode = jsQR(imageData.data, canvas.width, canvas.height);
+
+        if (qrCode) {
+          outputElement.textContent = `Código QR Detectado: ${qrCode.data}`;
+        } else {
+          outputElement.textContent = 'Escaneando...';
+        }
+
+        // Continuar escaneando
+        requestAnimationFrame(scan);
+      }
+
+      // Iniciar el escaneo
+      scan();
+    }
+  </script>
+
+</body>
+</html>
