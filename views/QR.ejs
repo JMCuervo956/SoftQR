@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,9 +18,13 @@
     video {
       border: 2px solid #000;
       margin-bottom: 20px;
+      width: 100%;
+      max-width: 400px;
+      height: auto;
     }
     #qr-result {
       font-size: 18px;
+      margin-top: 20px;
     }
   </style>
 </head>
@@ -28,29 +32,37 @@
   <h1>Escanear Código QR</h1>
   <video id="video" width="100%" height="auto" style="border: 1px solid #000;"></video>
   <div id="qr-result">Resultado del QR: <span id="qr-text">No escaneado</span></div>
+  
   <script type="module">
     import QrScanner from 'https://unpkg.com/qr-scanner@1.3.0/qr-scanner.min.js';
 
-    // Inicializa el escáner
     const videoElement = document.getElementById('video');
     const qrResultElement = document.getElementById('qr-text');
 
-    // Crea una instancia del escáner QR y pasa el video
-    const scanner = new QrScanner(videoElement, result => {
-      qrResultElement.textContent = result.data; // Muestra el resultado del QR
-      localStorage.setItem('qrResult', result.data); // Guarda el resultado en memoria (localStorage)
-      console.log(result.data); // Muestra el resultado en consola
-    });
+    // Función para iniciar el escáner
+    function startScanner() {
+      const scanner = new QrScanner(videoElement, result => {
+        qrResultElement.textContent = result.data; // Muestra el resultado del QR
+        localStorage.setItem('qrResult', result.data); // Guarda el resultado en memoria (localStorage)
+        console.log(result.data); // Muestra el resultado en consola
+      });
 
-    // Inicia el escaneo
-    QrScanner.hasCamera().then(hasCamera => {
-      if (hasCamera) {
-        scanner.start();
-      } else {
-        console.error('No se encuentra una cámara en este dispositivo');
-        qrResultElement.textContent = 'No se encuentra una cámara en este dispositivo';
-      }
-    });
+      QrScanner.hasCamera().then(hasCamera => {
+        if (hasCamera) {
+          console.log("Cámara encontrada. Iniciando escaneo...");
+          scanner.start();
+        } else {
+          console.error("No se encuentra una cámara en este dispositivo");
+          qrResultElement.textContent = "No se encuentra una cámara en este dispositivo";
+        }
+      }).catch(err => {
+        console.error("Error al verificar la cámara: ", err);
+        qrResultElement.textContent = "Error al acceder a la cámara";
+      });
+    }
+
+    // Comienza el escáner al cargar la página
+    startScanner();
   </script>
 </body>
 </html>
