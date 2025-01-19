@@ -26,6 +26,12 @@
       font-size: 18px;
       margin-top: 20px;
     }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
   </style>
 </head>
 <body>
@@ -33,18 +39,24 @@
   <video id="video" width="100%" height="auto" style="border: 1px solid #000;"></video>
   <div id="qr-result">Resultado del QR: <span id="qr-text">No escaneado</span></div>
   
+  <!-- Botón para iniciar el escaneo -->
+  <button id="startScanBtn">Iniciar escaneo</button>
+
   <script type="module">
     import QrScanner from 'https://unpkg.com/qr-scanner@1.3.0/qr-scanner.min.js';
 
     const videoElement = document.getElementById('video');
     const qrResultElement = document.getElementById('qr-text');
+    const startScanBtn = document.getElementById('startScanBtn');
+    let scanner;
 
     // Función para iniciar el escáner
     function startScanner() {
-      const scanner = new QrScanner(videoElement, result => {
+      scanner = new QrScanner(videoElement, result => {
         qrResultElement.textContent = result.data; // Muestra el resultado del QR
         localStorage.setItem('qrResult', result.data); // Guarda el resultado en memoria (localStorage)
         console.log(result.data); // Muestra el resultado en consola
+        stopScanner(); // Detenemos el escáner después de obtener el resultado
       });
 
       QrScanner.hasCamera().then(hasCamera => {
@@ -61,8 +73,19 @@
       });
     }
 
-    // Comienza el escáner al cargar la página
-    startScanner();
+    // Función para detener el escáner
+    function stopScanner() {
+      if (scanner) {
+        scanner.stop();
+        console.log("Escáner detenido.");
+      }
+    }
+
+    // Evento de clic en el botón para iniciar el escaneo
+    startScanBtn.addEventListener('click', () => {
+      qrResultElement.textContent = "Escaneando...";
+      startScanner();
+    });
   </script>
 </body>
 </html>
