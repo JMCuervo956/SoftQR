@@ -214,6 +214,10 @@ app.get('/origen/:folder/:filename', (req, res) => {
 
 // INVENTARIOS
 
+app.get('/QR', (req, res)=>{
+        res.render('QR', { user, rol, name, userUser, ciudadSeleccionadaTexto, ciudadSeleccionadaCodigo, parqueaderoSeleccionadoTexto,parqueaderoSeleccionadoCodigo });
+})
+
 app.get('/inventarios', (req, res)=>{
     if (req.session.loggedin) {
         const { user, name, rol, ciudadSeleccionadaCodigo, ciudadSeleccionadaTexto, parqueaderoSeleccionadoCodigo,  parqueaderoSeleccionadoTexto} = req.session;
