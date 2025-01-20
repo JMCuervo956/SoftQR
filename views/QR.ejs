@@ -65,6 +65,10 @@
         qrResultElement.textContent = result.data; // Muestra el resultado del QR
         localStorage.setItem('qrResult', result.data); // Guarda el resultado en memoria (localStorage)
         stopScanner(); // Detenemos el escáner después de obtener el resultado
+      }, error => {
+        // Se activa si hay algún problema en la lectura del código QR
+        console.log("Error de escaneo:", error);
+        qrResultElement.textContent = "Error al leer el código QR. Intenta nuevamente.";
       });
 
       // Verificamos si el dispositivo tiene una cámara
@@ -101,3 +105,4 @@
   </script>
 </body>
 </html>
+
