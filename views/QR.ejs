@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Escanear Código QR</title>
+  <title>Escanear Código QR con html5-qrcode</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -15,16 +15,15 @@
       flex-direction: column;
       text-align: center;
     }
-    video {
-      border: 2px solid #000;
-      margin-bottom: 20px;
-      width: 100%;
-      max-width: 400px;
-      height: auto;
-    }
     #qr-result {
       font-size: 18px;
       margin-top: 20px;
+    }
+    #reader {
+      width: 100%;
+      max-width: 400px;
+      height: auto;
+      border: 1px solid #000;
     }
     button {
       padding: 10px 20px;
@@ -36,16 +35,14 @@
 </head>
 <body>
   <h1>Escanear Código QR</h1>
-  <video id="video" width="100%" height="auto" style="border: 1px solid #000;"></video>
+  <div id="reader"></div>
   <div id="qr-result">Resultado del QR: <span id="qr-text">No escaneado</span></div>
-  
+
   <!-- Botón para iniciar el escaneo -->
   <button id="startScanBtn">Iniciar escaneo</button>
 
-  <script type="module">
-    import QrScanner from 'https://unpkg.com/qr-scanner@1.3.0/qr-scanner.min.js';
-
-    const videoElement = document.getElementById('video');
+  <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
+  <script>
     const qrResultElement = document.getElementById('qr-text');
     const startScanBtn = document.getElementById('startScanBtn');
     let scanner;
@@ -59,33 +56,23 @@
         return;
       }
 
-      // Creamos una nueva instancia del escáner
-      scanner = new QrScanner(videoElement, result => {
-        console.log("Resultado del escaneo:", result);
-        qrResultElement.textContent = result.data; // Muestra el resultado del QR
-        localStorage.setItem('qrResult', result.data); // Guarda el resultado en memoria (localStorage)
-        stopScanner(); // Detenemos el escáner después de obtener el resultado
-      }, error => {
-        // Se activa si hay algún problema en la lectura del código QR
-        console.log("Error de escaneo:", error);
-        qrResultElement.textContent = "Error al leer el código QR. Intenta nuevamente.";
-      });
+      // Inicializamos el lector de QR
+      const config = {
+        fps: 10, // Frames por segundo (puedes ajustarlo si el escáner es lento)
+        qrbox: 250, // Tamaño del área donde se escanea el código QR
+      };
 
-      // Verificamos si el dispositivo tiene una cámara
-      QrScanner.hasCamera().then(hasCamera => {
-        if (hasCamera) {
-          console.log("Cámara encontrada. Iniciando escaneo...");
-          scanner.start().catch(error => {
-            console.error("Error al iniciar la cámara: ", error);
-            qrResultElement.textContent = "No se pudo acceder a la cámara";
-          });
-        } else {
-          console.error("No se encuentra una cámara en este dispositivo");
-          qrResultElement.textContent = "No se encuentra una cámara en este dispositivo";
-        }
-      }).catch(err => {
-        console.error("Error al verificar la cámara: ", err);
-        qrResultElement.textContent = "Error al acceder a la cámara";
+      scanner = new Html5QrcodeScanner("reader", config);
+
+      // Iniciamos el escaneo con una función de éxito y otra de error
+      scanner.render((qrCodeMessage) => {
+        console.log("Resultado del escaneo:", qrCodeMessage);
+        qrResultElement.textContent = qrCodeMessage; // Muestra el resultado del QR
+        localStorage.setItem('qrResult', qrCodeMessage); // Guarda el resultado en memoria (localStorage)
+        stopScanner(); // Detenemos el escáner después de obtener el resultado
+      }, (errorMessage) => {
+        console.error("Error al leer el QR:", errorMessage);
+        qrResultElement.textContent = "Error al leer el QR. Intenta nuevamente.";
       });
     }
 
@@ -93,7 +80,7 @@
     function stopScanner() {
       if (scanner) {
         console.log("Deteniendo el escáner...");
-        scanner.stop();
+        scanner.clear();
       }
     }
 
@@ -105,4 +92,3 @@
   </script>
 </body>
 </html>
-
