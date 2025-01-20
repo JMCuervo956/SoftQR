@@ -41,7 +41,9 @@
   <!-- Botón para iniciar el escaneo -->
   <button id="startScanBtn">Iniciar escaneo</button>
 
-  <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
+  <!-- Cargar la librería html5-qrcode desde jsdelivr -->
+  <script src="https://cdn.jsdelivr.net/npm/html5-qrcode/minified/html5-qrcode.min.js"></script>
+
   <script>
     const qrResultElement = document.getElementById('qr-text');
     const startScanBtn = document.getElementById('startScanBtn');
@@ -62,18 +64,23 @@
         qrbox: 250, // Tamaño del área donde se escanea el código QR
       };
 
-      scanner = new Html5QrcodeScanner("reader", config);
+      // Aquí nos aseguramos de que el Html5QrcodeScanner esté definido
+      if (typeof Html5QrcodeScanner !== 'undefined') {
+        scanner = new Html5QrcodeScanner("reader", config);
 
-      // Iniciamos el escaneo con una función de éxito y otra de error
-      scanner.render((qrCodeMessage) => {
-        console.log("Resultado del escaneo:", qrCodeMessage);
-        qrResultElement.textContent = qrCodeMessage; // Muestra el resultado del QR
-        localStorage.setItem('qrResult', qrCodeMessage); // Guarda el resultado en memoria (localStorage)
-        stopScanner(); // Detenemos el escáner después de obtener el resultado
-      }, (errorMessage) => {
-        console.error("Error al leer el QR:", errorMessage);
-        qrResultElement.textContent = "Error al leer el QR. Intenta nuevamente.";
-      });
+        // Iniciamos el escaneo con una función de éxito y otra de error
+        scanner.render((qrCodeMessage) => {
+          console.log("Resultado del escaneo:", qrCodeMessage);
+          qrResultElement.textContent = qrCodeMessage; // Muestra el resultado del QR
+          localStorage.setItem('qrResult', qrCodeMessage); // Guarda el resultado en memoria (localStorage)
+          stopScanner(); // Detenemos el escáner después de obtener el resultado
+        }, (errorMessage) => {
+          console.error("Error al leer el QR:", errorMessage);
+          qrResultElement.textContent = "Error al leer el QR. Intenta nuevamente.";
+        });
+      } else {
+        console.error("La librería Html5QrcodeScanner no se ha cargado correctamente.");
+      }
     }
 
     // Función para detener el escáner
