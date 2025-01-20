@@ -48,6 +48,7 @@
     const qrResultElement = document.getElementById('qr-text');
     const startScanBtn = document.getElementById('startScanBtn');
     let scanner;
+    let currentCamera = null;
 
     // Función para iniciar el escáner
     function startScanner() {
@@ -58,29 +59,47 @@
         return;
       }
 
-      // Inicializamos el lector de QR
-      const config = {
-        fps: 10, // Frames por segundo (puedes ajustarlo si el escáner es lento)
-        qrbox: 250, // Tamaño del área donde se escanea el código QR
-      };
+      // Obtener las cámaras disponibles
+      Html5Qrcode.getCameras().then(devices => {
+        if (devices && devices.length > 0) {
+          // Buscar la cámara trasera
+          const rearCamera = devices.find(device => device.label.toLowerCase().includes("back") || device.label.toLowerCase().includes("rear"));
+          
+          // Si no se encuentra una cámara trasera, seleccionamos la primera cámara disponible
+          const selectedCamera = rearCamera || devices[0];
 
-      // Aquí nos aseguramos de que el Html5QrcodeScanner esté definido
-      if (typeof Html5QrcodeScanner !== 'undefined') {
-        scanner = new Html5QrcodeScanner("reader", config);
+          currentCamera = selectedCamera;
 
-        // Iniciamos el escaneo con una función de éxito y otra de error
-        scanner.render((qrCodeMessage) => {
-          console.log("Resultado del escaneo:", qrCodeMessage);
-          qrResultElement.textContent = qrCodeMessage; // Muestra el resultado del QR
-          localStorage.setItem('qrResult', qrCodeMessage); // Guarda el resultado en memoria (localStorage)
-          stopScanner(); // Detenemos el escáner después de obtener el resultado
-        }, (errorMessage) => {
-          console.error("Error al leer el QR:", errorMessage);
-          qrResultElement.textContent = "Error al leer el QR. Intenta nuevamente.";
-        });
-      } else {
-        console.error("La librería Html5QrcodeScanner no se ha cargado correctamente.");
-      }
+          // Inicializamos el lector de QR
+          const config = {
+            fps: 10, // Frames por segundo (puedes ajustarlo si el escáner es lento)
+            qrbox: 250, // Tamaño del área donde se escanea el código QR
+          };
+
+          // Aquí nos aseguramos de que el Html5QrcodeScanner esté definido
+          if (typeof Html5QrcodeScanner !== 'undefined') {
+            scanner = new Html5QrcodeScanner("reader", config);
+
+            // Iniciamos el escaneo con una función de éxito y otra de error
+            scanner.render((qrCodeMessage) => {
+              console.log("Resultado del escaneo:", qrCodeMessage);
+              qrResultElement.textContent = qrCodeMessage; // Muestra el resultado del QR
+              localStorage.setItem('qrResult', qrCodeMessage); // Guarda el resultado en memoria (localStorage)
+              stopScanner(); // Detenemos el escáner después de obtener el resultado
+            }, (errorMessage) => {
+              console.error("Error al leer el QR:", errorMessage);
+              qrResultElement.textContent = "Error al leer el QR. Intenta nuevamente.";
+            });
+
+            // Inicia el escáner con la cámara seleccionada
+            scanner.start({ facingMode: { exact: currentCamera.deviceId } }, config);
+          }
+        } else {
+          console.error("No se encontraron cámaras disponibles.");
+        }
+      }).catch(err => {
+        console.error("Error al obtener las cámaras:", err);
+      });
     }
 
     // Función para detener el escáner
@@ -88,13 +107,21 @@
       if (scanner) {
         console.log("Deteniendo el escáner...");
         scanner.clear();
+        scanner = null;
       }
     }
 
     // Evento de clic en el botón para iniciar el escaneo
     startScanBtn.addEventListener('click', () => {
-      qrResultElement.textContent = "Escaneando...";
-      startScanner();
+      if (scanner) {
+        // Si el escáner ya está activo, lo detenemos para reiniciar
+        stopScanner();
+        qrResultElement.textContent = "Escaneando...";
+        startScanner();  // Reiniciamos el escáner
+      } else {
+        qrResultElement.textContent = "Escaneando...";
+        startScanner();  // Iniciamos el escáner si no está activo
+      }
     });
   </script>
 </body>
